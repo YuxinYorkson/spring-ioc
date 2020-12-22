@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!--控制bean的加载顺序 depends-on-->
+    <bean class="cn.tulingxueyuan.beans.User" id="user" depends-on="spouse"></bean>
+    <bean class="cn.tulingxueyuan.beans.Spouse" id="spouse">
+        <property name="name" value="spouse"></property>
+        <property name="age" value="25"></property>
+    </bean>
+
+    <!--懒加载
+        只有当bean使用的时候才加载
+    -->
+    <bean class="cn.tulingxueyuan.beans.Spouse" id="spouse1" lazy-init="true"></bean>
+
+    <!--作用域 scope
+        singleton 默认值, 每次使用只会创建一次bean
+        prototype 原型, 每次使用都会重新创建一个bean
+    -->
+    <bean class="cn.tulingxueyuan.beans.Person" id="person" scope="singleton"></bean>
+    <bean class="cn.tulingxueyuan.beans.Person" id="person1" scope="prototype"></bean>
+
+    <!--使用静态工厂方法实例化 Bean-->
+    <bean class="cn.tulingxueyuan.beans.Person" id="person2" factory-method="createPersonFactory"></bean>
+
+    <!--使用实例工厂实例化 Bean-->
+    <bean class="cn.tulingxueyuan.beans.PersonFactory" id="personFactory"></bean>
+    <bean class="cn.tulingxueyuan.beans.PersonFactory" id="person3"
+          factory-bean="personFactory"
+          factory-method="createPersonFactory">
+    </bean>
+
+    <!--自动注入
+        byType 根据类型自动匹配 当出现多个同类型的bean或者未匹配到类型则会报错
+        byName 根据set方法的名字自动匹配
+        constructor 根据构造器自动匹配，优先根据参数名字匹配
+
+        假如名字未匹配，则会根据参数类型去匹配，多个类型会导致注入失败
+        1. 可以设置 primary="true" 来指定类型匹配优先级
+        2. 可以设置 autowire-candidate="false" 来忽略自动注入设置
+
+        根据构造器的参数进行完成的注入匹配 Person(Spouse spouse2, User user)，则必须装配User才能完成注入
+    -->
+    <bean class="cn.tulingxueyuan.beans.Person" id="person4" autowire="constructor"></bean>
+    <bean class="cn.tulingxueyuan.beans.Spouse" id="spouse2" primary="true">
+        <property name="name" value="spouse2"></property>
+        <property name="age" value="26"></property>
+    </bean>
+
+    <!--生命周期
+    -->
+    <bean class="cn.tulingxueyuan.beans.Person" id="person5">
+        <property name="name" value="life cycle"></property>
+    </bean>
+    <bean class="cn.tulingxueyuan.beans.Person" id="person6"
+          init-method="initByXmlConfig" destroy-method="destroyByXmlConfig">
+    </bean>
+
+    <!--引用第三方bean-->
+    <bean class="com.alibaba.druid.pool.DruidDataSource" id="dataSource">
+        <property name="username" value="${mysql.username}"></property>
+        <property name="password" value="${mysql.password}"></property>
+        <property name="url" value="${mysql.url}"></property>
+        <property name="driverClassName" value="${mysql.driverClassName}"></property>
+    </bean>
+    <!--引入外部属性文件-->
+    <context:property-placeholder location="db.properties"></context:property-placeholder>
+
+    <!--SpEL-->
+    <bean class="cn.tulingxueyuan.beans.Person" id="person7">
+        <!--运算表达式-->
+        <property name="id" value="#{2*2}"></property>
+        <!--引入外部bean-->
+        <property name="spouse" value="#{spouse}"></property>
+        <!--调用bean的属性-->
+        <property name="name" value="#{spouse.name}"></property>
+        <!--调用bean的方法-->
+        <property name="gender" value="#{spouse.getName()}"></property>
+        <!--调用静态方法-->
+        <property name="birthday" value="#{T(cn.tulingxueyuan.beans.PersonFactory).currentDate()}"></property>
+    </bean>
+
+</beans>
